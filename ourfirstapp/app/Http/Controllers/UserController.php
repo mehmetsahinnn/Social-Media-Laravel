@@ -8,11 +8,12 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+//change password validation min to at least 8 later to add basic security
     public function register(Request $request){
         $incomingFields = $request -> validate([
             'username' => ['required', 'min:3', 'max:20', Rule::unique('users','username')],
             'email' => ['required','email' ,Rule::unique('users','email')],
-            'password' => ['required', 'min:8', 'max:20', 'confirmed']
+            'password' => ['required', 'min:1', 'max:20', 'confirmed']
         ]);
 
         $incomingFields['password'] = bcrypt($incomingFields['password']);
@@ -52,6 +53,6 @@ class UserController extends Controller
 
     public function logout(){
             auth()->logout();
-            return redirect('/')->with('success', 'logged out');;
+            return redirect('/')->with('success', 'logged out');
     }
 }
