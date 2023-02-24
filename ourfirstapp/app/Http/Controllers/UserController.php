@@ -4,10 +4,42 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Intervention\Image\Facades\Image;
 
 class UserController extends Controller
 {
+    public function storeAvatar(Request $request){
+        $request-> validate([
+            'avatar'=>'required|image|max:3000'
+        ]);
+        $user = auth()->user();
+        $filename = $user->id . '-' . uniqid()  . '.jpg';
+        $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
+
+        Storage::put('public/avatars'.$filename, $imgData);
+
+        $oldAvatar = $user->avatar;
+
+        $user->avatar = $filename;
+        $user->save();
+
+        if ($oldAvatar != "/fallback-avatar.jpg"){
+            Storage::delete("/storage/","public/", $oldAvatar);
+        }
+
+        return back()->with('success', 'nice avatar');
+    }
+    public function showAvatarForm(){
+        return view('avatar-form');
+    }
+
+    public function profile(User $user_page){
+//        return $user_page->posts()->get();
+        return view('profile-posts', ['avatar'=> $user_page->avatar ,'username'=>$user_page-> username, 'posts'=>$user_page->posts()->get(), 'PostCount'=>$user_page->posts()->count()]);
+    }
+
 //change password validation min to at least 8 later to add basic security
     public function register(Request $request){
         $incomingFields = $request -> validate([
