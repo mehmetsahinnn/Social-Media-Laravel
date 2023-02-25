@@ -3,56 +3,55 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Mail\Markdown;
-use newrelic\DistributedTracePayload;
-use PhpParser\Error;
-use Psy\Util\Str;
 
 class PostController extends Controller
 {
-    public function showCreateForm(){
-        return view("create-post");
-    }
-    public function storeNewPost(Request $request){
+    public function actuallyUpdate(Post $post, Request $request) {
         $incomingFields = $request->validate([
             'title' => 'required',
-            'body'  => 'required'
+            'body' => 'required'
         ]);
+
         $incomingFields['title'] = strip_tags($incomingFields['title']);
         $incomingFields['body'] = strip_tags($incomingFields['body']);
-        $incomingFields['user_id'] = auth() -> id();
 
-        $newPost=  Post::create($incomingFields);
+        $post->update($incomingFields);
 
-        return redirect("/post/{$newPost->id}")->with('success', 'You made it!!!');
+        return back()->with('success', 'Post successfully updated.');
     }
 
-    public function viewSinglePost(Post $post){
-        $post['body'] = \Illuminate\Support\Str::markdown($post->body);
-        return view('single-post', ['post'=>$post]);
+    public function showEditForm(Post $post) {
+        return view('edit-post', ['post' => $post]);
     }
 
-    public function delete(Post $post){
+    public function delete(Post $post) {
         $post->delete();
-        return redirect('/profile/' . auth()->user()->username)->with('success', 'post is deleted');
+        return redirect('/profile/' . auth()->user()->username)->with('success', 'Post successfully deleted.');
     }
 
-    public function showEditForm(Post $post){
-        return view('edit-post', ['post'=>$post]);
+    public function viewSinglePost(Post $post) {
+        $post['body'] = strip_tags(Str::markdown($post->body), '<p><ul><ol><li><strong><em><h3><br>');
+        return view('single-post', ['post' => $post]);
     }
 
-    public function actuallyUpdate(Post $post, Request $request)
-    {
-        $incomingFields = $request -> validate([
-           'title'=>'required',
-            'body'=>'required'
+    public function storeNewPost(Request $request) {
+        $incomingFields = $request->validate([
+            'title' => 'required',
+            'body' => 'required'
         ]);
 
         $incomingFields['title'] = strip_tags($incomingFields['title']);
         $incomingFields['body'] = strip_tags($incomingFields['body']);
-        $post -> update($incomingFields);
+        $incomingFields['user_id'] = auth()->id();
 
-        return  back() -> with('success','Post successfully updated');
+        $newPost = Post::create($incomingFields);
+
+        return redirect("/post/{$newPost->id}")->with('success', 'New post successfully created.');
+    }
+
+    public function showCreateForm() {
+        return view('create-post');
     }
 }
